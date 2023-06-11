@@ -1,8 +1,34 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include "interface.h"
 
 void read_params(int argc, void *argv, params_t *params)
 {
+    int option;
+
+    params->custom_bound = 1;
+    params->feasibility = 1;
+    params->optimization = 1;
+
+    while ((option = getopt(argc, argv, "afo")) != -1)
+    {
+        switch (option)
+        {
+        case 'a':
+            params->custom_bound = 0;
+            break;
+        case 'f':
+            params->feasibility = 0;
+            break;
+        case 'o':
+            params->optimization = 0;
+            break;
+        default:
+            exit(-1);
+            break;
+        }
+    }
 }
 
 void read_input(heroes_t *heroes)

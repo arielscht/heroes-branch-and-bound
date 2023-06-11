@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "src/interface.h"
+#include "src/heroes.h"
 
 int main(int argc, void *argv)
 {
@@ -9,7 +10,7 @@ int main(int argc, void *argv)
     read_params(argc, argv, &params);
     read_input(&heroes);
 
-    print_heroes(&heroes);
+    // print_heroes(&heroes);
 
     heroes_destroy(&heroes);
     return 0;
