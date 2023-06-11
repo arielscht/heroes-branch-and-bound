@@ -2,27 +2,39 @@
 #include <stdlib.h>
 #include "heroes.h"
 
+void *alloc_array(int length, int item_size)
+{
+    void *array = calloc(length, item_size);
+    if (array == NULL)
+    {
+        perror("Error allocating array");
+        exit(1);
+    }
+    return array;
+}
+
 int heroes_init(heroes_t *heroes, int quantity, int conflicts, int friendships)
 {
     heroes->quantity = quantity;
     heroes->conflicts_qty = conflicts;
     heroes->friendships_qty = friendships;
+    heroes->unavoided_conflicts = 0;
 
-    heroes->heroes = calloc(quantity, sizeof(hero_t));
+    heroes->heroes = alloc_array(quantity, sizeof(hero_t));
     if (heroes->heroes == NULL)
     {
         perror("Error allocating array");
         return -1;
     }
 
-    heroes->conflicts = calloc(conflicts, sizeof(hero_pair_t));
+    heroes->conflicts = alloc_array(conflicts, sizeof(hero_pair_t));
     if (heroes->conflicts == NULL)
     {
         perror("Error allocating array");
         return -1;
     }
 
-    heroes->friendships = calloc(friendships, sizeof(hero_pair_t));
+    heroes->friendships = alloc_array(friendships, sizeof(hero_pair_t));
     if (heroes->friendships == NULL)
     {
         perror("Error allocating array");

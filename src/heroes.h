@@ -15,10 +15,19 @@ typedef struct hero_pair_t
 typedef struct heroes_t
 {
     int quantity, conflicts_qty, friendships_qty;
+    int unavoided_conflicts;
     hero_t *heroes;
     hero_pair_t *conflicts;
     hero_pair_t *friendships;
 } heroes_t;
+
+/*!
+    \brief Generic function to allocate memoty
+    \param lenght Quantity of items to allocate
+    \param item_size Sizeof what you want to allocate
+    \return Pointer to allocated memory
+*/
+void *alloc_array(int length, int item_size);
 
 /*!
     \brief Initializes the heroes arrays
