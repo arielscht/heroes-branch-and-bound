@@ -14,7 +14,6 @@ int main(int argc, char **argv)
     optimize_heroes(&heroes, &params);
     print_heroes(&heroes);
 
-    // dando core dumped por algum motivo
-    // heroes_destroy(&heroes);
+    heroes_destroy(&heroes);
     return 0;
 }

@@ -41,9 +41,9 @@ int heroes_init(heroes_t *heroes, int quantity, int conflicts, int friendships)
         return -1;
     }
 
-    for (int i = 1; i <= quantity; i++)
+    for (int i = 0; i < quantity; i++)
     {
-        heroes->heroes[i].id = i;
+        heroes->heroes[i].id = i + 1;
         heroes->heroes[i].group = 0;
     }
 
