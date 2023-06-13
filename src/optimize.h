@@ -10,6 +10,7 @@ typedef struct optimize_state_t
     int *opt_solution;
     int opt_value;
     int nodes;
+    double time;
 } optimize_state_t;
 
 /*!

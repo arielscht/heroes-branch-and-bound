@@ -1,6 +1,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include "optimize.h"
 
 /* ============================== Auxiliary Functions ============================== */
@@ -91,20 +92,27 @@ int partial_bound(int *partial_solution, params_t *params)
 int optimize_heroes(heroes_t *heroes, params_t *params)
 {
     optimize_state_t optimize;
+    struct timeval start, end;
 
     optimize.cur_solution = alloc_array(heroes->quantity, sizeof(int));
     optimize.opt_solution = alloc_array(heroes->quantity, sizeof(int));
     optimize.opt_value = INT_MAX;
     optimize.nodes = 0;
 
+    gettimeofday(&start, NULL);
     optimize_heroes_recursive(heroes, params, &optimize, 0);
+    gettimeofday(&end, NULL);
+
+    optimize.time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
 
     for (int i = 0; i < heroes->quantity; i++)
     {
         printf("%d ", optimize.opt_solution[i]);
         heroes->heroes[i].group = optimize.opt_solution[i];
     }
-    printf("\nNODES: %d\n", optimize.nodes);
+    printf("\nNODES: %d", optimize.nodes);
+    printf("\nTIME: %f", optimize.time);
+    printf("\nCONFLICTS: %d\n\n", optimize.opt_value);
 
     return 0;
 }
