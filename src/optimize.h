@@ -14,13 +14,6 @@ typedef struct optimize_state_t
 } optimize_state_t;
 
 /*!
-    \brief Calculatethe B set
-    \param partial_solution
-    \param params Pointer to the params structure
-*/
-int partial_bound(int *partial_solution, params_t *params);
-
-/*!
     \brief Branch and bound function
     \param heroes Pointer to the heroes structure
     \param params Pointer to the params structure

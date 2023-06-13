@@ -36,17 +36,25 @@ int profit(int *solution, heroes_t *heroes)
 
 int custom_bound(int *partial_solution)
 {
-    return 0;
+    return -1;
 }
 
 int naive_bound(int *partial_solution)
 {
-    return 0;
+    return -1;
+}
+
+int partial_bound(int *partial_solution, params_t *params)
+{
+    if (params->custom_bound)
+        return custom_bound(partial_solution);
+    else
+        return naive_bound(partial_solution);
 }
 
 void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_state_t *optimize, int depth)
 {
-    int cur_opt, available_opt;
+    int cur_opt, available_opt, partial_opt;
     optimize->nodes++;
 
     if (depth == heroes->quantity)
@@ -60,11 +68,8 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
     }
 
     available_opt = 2;
-    if (params->feasibility)
-        if (depth != heroes->quantity)
-            available_opt = check_friendships(heroes, optimize, depth + 1);
-
-    // FAZEMOS O BOUND AQUI
+    if (params->feasibility && depth != heroes->quantity)
+        available_opt = check_friendships(heroes, optimize, depth + 1);
 
     if (depth != heroes->quantity)
     {
@@ -72,22 +77,21 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
         int cond = available_opt == 2 ? available_opt : init + 1;
         for (int i = init; i < cond; i++)
         {
-            optimize->cur_solution[depth] = i;
-            optimize_heroes_recursive(heroes, params, optimize, depth + 1);
-            optimize->cur_solution[depth] = 0;
+            partial_opt = INT_MIN;
+            if (params->optimization)
+                partial_opt = partial_bound(optimize->opt_solution, params);
+
+            if (partial_opt < optimize->opt_value)
+            {
+                optimize->cur_solution[depth] = i;
+                optimize_heroes_recursive(heroes, params, optimize, depth + 1);
+                optimize->cur_solution[depth] = 0;
+            }
         }
     }
 }
 
 /* ============================== Internal Functions ============================== */
-
-int partial_bound(int *partial_solution, params_t *params)
-{
-    if (params->custom_bound)
-        return custom_bound(partial_solution);
-    else
-        return naive_bound(partial_solution);
-}
 
 int optimize_heroes(heroes_t *heroes, params_t *params)
 {
