@@ -9,6 +9,7 @@ typedef struct optimize_state_t
     int *cur_solution;
     int *opt_solution;
     int opt_value;
+    int nodes;
 } optimize_state_t;
 
 /*!

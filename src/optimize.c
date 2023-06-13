@@ -10,18 +10,12 @@ int check_friendships(heroes_t *heroes, optimize_state_t *optimize, int cur_hero
     for (int i = 0; i < heroes->friendships_qty; i++)
     {
         if (heroes->friendships[i].hero1 == cur_hero && heroes->friendships[i].hero2 < cur_hero)
-        {
-            if (optimize->cur_solution[heroes->friendships[i].hero2 - 1] == 0)
-                return 0;
-        }
-        else if (heroes->friendships[i].hero2 == cur_hero && heroes->friendships[i].hero2 < cur_hero)
-        {
-            if (optimize->cur_solution[heroes->friendships[i].hero1 - 1] == 0)
-                return 0;
-        }
+            return optimize->cur_solution[heroes->friendships[i].hero2 - 1];
+        else if (heroes->friendships[i].hero2 == cur_hero && heroes->friendships[i].hero1 < cur_hero)
+            return optimize->cur_solution[heroes->friendships[i].hero1 - 1];
     }
 
-    return 1;
+    return 2;
 }
 
 /* ============================== Auxiliary Functions ============================== */
@@ -52,6 +46,7 @@ int naive_bound(int *partial_solution)
 void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_state_t *optimize, int depth)
 {
     int cur_opt, available_opt;
+    optimize->nodes++;
 
     if (depth == heroes->quantity)
     {
@@ -63,20 +58,18 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
         }
     }
 
-    available_opt = -1;
-    if (depth != heroes->quantity)
-    {
-        if (check_friendships(heroes, optimize, depth + 1))
-            available_opt = 1;
-        else
-            available_opt = 0;
-    }
+    available_opt = 2;
+    if (params->feasibility)
+        if (depth != heroes->quantity)
+            available_opt = check_friendships(heroes, optimize, depth + 1);
 
     // FAZEMOS O BOUND AQUI
 
-    if (available_opt != -1)
+    if (depth != heroes->quantity)
     {
-        for (int i = 0; i <= available_opt; i++)
+        int init = available_opt == 2 ? 0 : available_opt;
+        int cond = available_opt == 2 ? available_opt : init + 1;
+        for (int i = init; i < cond; i++)
         {
             optimize->cur_solution[depth] = i;
             optimize_heroes_recursive(heroes, params, optimize, depth + 1);
@@ -102,6 +95,7 @@ int optimize_heroes(heroes_t *heroes, params_t *params)
     optimize.cur_solution = alloc_array(heroes->quantity, sizeof(int));
     optimize.opt_solution = alloc_array(heroes->quantity, sizeof(int));
     optimize.opt_value = INT_MAX;
+    optimize.nodes = 0;
 
     optimize_heroes_recursive(heroes, params, &optimize, 0);
 
@@ -110,7 +104,7 @@ int optimize_heroes(heroes_t *heroes, params_t *params)
         printf("%d ", optimize.opt_solution[i]);
         heroes->heroes[i].group = optimize.opt_solution[i];
     }
-    printf("\n");
+    printf("\nNODES: %d\n", optimize.nodes);
 
     return 0;
 }
