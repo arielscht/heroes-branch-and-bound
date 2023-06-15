@@ -19,6 +19,7 @@ typedef struct heroes_t
     hero_t *heroes;
     hero_pair_t *conflicts;
     hero_pair_t *friendships;
+    short int **aux_matrix;
 } heroes_t;
 
 /*!
@@ -28,6 +29,10 @@ typedef struct heroes_t
     \return Pointer to allocated memory
 */
 void *alloc_array(int length, int item_size);
+
+void **alloc_matrix(int lines, int columns, int item_size);
+
+void free_matrix(void **matrix);
 
 /*!
     \brief Initializes the heroes arrays

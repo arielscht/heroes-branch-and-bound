@@ -13,6 +13,21 @@ void *alloc_array(int length, int item_size)
     return array;
 }
 
+void **alloc_matrix(int lines, int columns, int item_size)
+{
+    void **matrix = alloc_array(lines, sizeof(void *));
+    matrix[0] = alloc_array(lines * columns, item_size);
+    for (int i = 0; i < lines; i++)
+        matrix[i] = matrix[0] + i * columns * item_size;
+    return matrix;
+}
+
+void free_matrix(void **matrix)
+{
+    free(matrix[0]);
+    free(matrix);
+}
+
 int heroes_init(heroes_t *heroes, int quantity, int conflicts, int friendships)
 {
     heroes->quantity = quantity;
@@ -41,6 +56,7 @@ int heroes_init(heroes_t *heroes, int quantity, int conflicts, int friendships)
         return -1;
     }
 
+    heroes->aux_matrix = (short int **)alloc_matrix(quantity, quantity, sizeof(short int));
     for (int i = 0; i < quantity; i++)
     {
         heroes->heroes[i].id = i + 1;
@@ -60,6 +76,9 @@ int heroes_destroy(heroes_t *heroes)
 
     if (heroes->friendships)
         free(heroes->friendships);
+
+    if (heroes->aux_matrix)
+        free_matrix((void **)heroes->aux_matrix);
 
     return 0;
 }

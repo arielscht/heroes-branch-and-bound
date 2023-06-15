@@ -19,37 +19,83 @@ int check_friendships(heroes_t *heroes, optimize_state_t *optimize, int cur_hero
     return 2;
 }
 
+int count_triangles(heroes_t *heroes, int depth)
+{
+    int hero1, hero2, found;
+    int counter = 0;
+    memset(heroes->aux_matrix[0], 0, heroes->quantity * sizeof(short int));
+    for (int i = 0; i < heroes->conflicts_qty; i++)
+    {
+        found = 0;
+        hero1 = heroes->conflicts[i].hero1;
+        hero2 = heroes->conflicts[i].hero2;
+        if (hero1 > depth && hero2 > depth)
+        {
+            hero1 -= 1;
+            hero2 -= 1;
+            for (int j = depth; j < heroes->quantity && found == 0; j++)
+            {
+                if (heroes->aux_matrix[j][hero1] == 1 && heroes->aux_matrix[j][hero2] == 1)
+                {
+                    heroes->aux_matrix[j][hero1] = -1;
+                    heroes->aux_matrix[hero1][j] = -1;
+                    heroes->aux_matrix[j][hero2] = -1;
+                    heroes->aux_matrix[hero2][j] = -1;
+                    heroes->aux_matrix[hero1][hero2] = -1;
+                    heroes->aux_matrix[hero2][hero1] = -1;
+                    counter++;
+                    found = 1;
+                }
+            }
+            if (found == 0)
+            {
+                heroes->aux_matrix[hero1][hero2] = 1;
+                heroes->aux_matrix[hero2][hero1] = 1;
+            }
+        }
+    }
+    return counter;
+}
+
 /* ============================== Auxiliary Functions ============================== */
 
 /* ============================== Internal Functions ============================== */
 
-int profit(int *solution, heroes_t *heroes)
+int profit(int *solution, heroes_t *heroes, int depth)
 {
     int profit = 0;
+    int hero1, hero2;
     for (int i = 0; i < heroes->conflicts_qty; i++)
-        if ((solution[heroes->conflicts[i].hero1 - 1] == 1 && solution[heroes->conflicts[i].hero2 - 1] == 1) ||
-            (solution[heroes->conflicts[i].hero1 - 1] == 0 && solution[heroes->conflicts[i].hero2 - 1] == 0))
-            profit++;
+    {
+        hero1 = heroes->conflicts[i].hero1;
+        hero2 = heroes->conflicts[i].hero2;
+        if (hero1 <= depth && hero2 <= depth)
+        {
+            if ((solution[hero1 - 1] == 1 && solution[hero2 - 1] == 1) ||
+                (solution[hero1 - 1] == 0 && solution[hero2 - 1] == 0))
+                profit++;
+        }
+    }
 
     return profit;
 }
 
-int custom_bound(int *partial_solution)
+int custom_bound(int *partial_solution, int depth)
 {
     return -1;
 }
 
-int naive_bound(int *partial_solution)
+int naive_bound(heroes_t *heroes, int *partial_solution, int depth)
 {
-    return -1;
+    return profit(partial_solution, heroes, depth) + count_triangles(heroes, depth);
 }
 
-int partial_bound(int *partial_solution, params_t *params)
+int partial_bound(heroes_t *heroes, int *partial_solution, int depth, params_t *params)
 {
     if (params->custom_bound)
-        return custom_bound(partial_solution);
+        return custom_bound(partial_solution, depth);
     else
-        return naive_bound(partial_solution);
+        return naive_bound(heroes, partial_solution, depth);
 }
 
 void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_state_t *optimize, int depth)
@@ -59,7 +105,7 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
 
     if (depth == heroes->quantity)
     {
-        cur_opt = profit(optimize->cur_solution, heroes);
+        cur_opt = profit(optimize->cur_solution, heroes, INT_MAX);
         if (cur_opt < optimize->opt_value)
         {
             optimize->opt_value = cur_opt;
@@ -79,7 +125,7 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
         {
             partial_opt = INT_MIN;
             if (params->optimization)
-                partial_opt = partial_bound(optimize->opt_solution, params);
+                partial_opt = partial_bound(heroes, optimize->cur_solution, depth, params);
 
             if (partial_opt < optimize->opt_value)
             {
