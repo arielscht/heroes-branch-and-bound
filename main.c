@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     read_input(&heroes);
 
     optimize_heroes(&heroes, &params);
-    print_heroes(&heroes);
+    // print_heroes(&heroes);
 
     heroes_destroy(&heroes);
     return 0;

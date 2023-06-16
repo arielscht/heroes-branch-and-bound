@@ -8,22 +8,43 @@
 
 int check_friendships(heroes_t *heroes, optimize_state_t *optimize, int cur_hero)
 {
+    int hero1, hero2;
     for (int i = 0; i < heroes->friendships_qty; i++)
     {
-        if (heroes->friendships[i].hero1 == cur_hero && heroes->friendships[i].hero2 < cur_hero)
-            return optimize->cur_solution[heroes->friendships[i].hero2 - 1];
-        else if (heroes->friendships[i].hero2 == cur_hero && heroes->friendships[i].hero1 < cur_hero)
-            return optimize->cur_solution[heroes->friendships[i].hero1 - 1];
+        hero1 = heroes->friendships[i].hero1;
+        hero2 = heroes->friendships[i].hero2;
+        if (hero1 == cur_hero && hero2 < cur_hero)
+            return optimize->cur_solution[hero2 - 1];
+        else if (hero2 == cur_hero && hero1 < cur_hero)
+            return optimize->cur_solution[hero1 - 1];
     }
 
     return 2;
 }
 
+int check_conflicts(heroes_t *heroes, int *partial_solution, int cur_hero, int cur_group)
+{
+    int hero1, hero2;
+    int counter = 0;
+
+    for (int i = 0; i < heroes->conflicts_qty; i++)
+    {
+        hero1 = heroes->conflicts[i].hero1;
+        hero2 = heroes->conflicts[i].hero2;
+        if (hero1 == cur_hero && hero2 < cur_hero && partial_solution[hero2 - 1] == cur_group)
+            counter++;
+        else if (hero2 == cur_hero && hero1 < cur_hero && partial_solution[hero1 - 1] == cur_group)
+            counter++;
+    }
+
+    return counter;
+}
+
 int count_triangles(heroes_t *heroes, int depth)
 {
-    int hero1, hero2, found;
-    int counter = 0;
-    memset(heroes->aux_matrix[0], 0, heroes->quantity * sizeof(short int));
+    int hero1, hero2, found, counter;
+    counter = 0;
+    memset(heroes->aux_matrix[0], 0, heroes->quantity * heroes->quantity * sizeof(short int));
     for (int i = 0; i < heroes->conflicts_qty; i++)
     {
         found = 0;
@@ -80,9 +101,9 @@ int profit(int *solution, heroes_t *heroes, int depth)
     return profit;
 }
 
-int custom_bound(int *partial_solution, int depth)
+int custom_bound(heroes_t *heroes, int *partial_solution, int depth, int cur_group)
 {
-    return -1;
+    return profit(partial_solution, heroes, depth) + count_triangles(heroes, depth) + check_conflicts(heroes, partial_solution, depth + 1, cur_group);
 }
 
 int naive_bound(heroes_t *heroes, int *partial_solution, int depth)
@@ -90,10 +111,10 @@ int naive_bound(heroes_t *heroes, int *partial_solution, int depth)
     return profit(partial_solution, heroes, depth) + count_triangles(heroes, depth);
 }
 
-int partial_bound(heroes_t *heroes, int *partial_solution, int depth, params_t *params)
+int partial_bound(heroes_t *heroes, int *partial_solution, int depth, params_t *params, int cur_group)
 {
     if (params->custom_bound)
-        return custom_bound(partial_solution, depth);
+        return custom_bound(heroes, partial_solution, depth, cur_group);
     else
         return naive_bound(heroes, partial_solution, depth);
 }
@@ -125,7 +146,7 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
         {
             partial_opt = INT_MIN;
             if (params->optimization)
-                partial_opt = partial_bound(heroes, optimize->cur_solution, depth, params);
+                partial_opt = partial_bound(heroes, optimize->cur_solution, depth, params, i);
 
             if (partial_opt < optimize->opt_value)
             {
