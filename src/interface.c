@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include "interface.h"
 
-void read_params(int argc, void *argv, params_t *params)
+void read_params(int argc, char **argv, params_t *params)
 {
     int option;
 
@@ -45,35 +45,17 @@ void read_input(heroes_t *heroes)
         fscanf(stdin, "%d %d", &heroes->friendships[i].hero1, &heroes->friendships[i].hero2);
 }
 
-void print_heroes(heroes_t *heroes)
+void show_results(heroes_t *heroes, optimize_state_t *optimize)
 {
-    printf("===== NUMBERS =====\n");
-    printf("Quantity of heroes: %d\n", heroes->quantity);
-    printf("Quantity of conflicts: %d\n", heroes->conflicts_qty);
-    printf("Quantity of friendships: %d\n\n", heroes->friendships_qty);
+    int first_hero_group = optimize->opt_solution[0];
 
-    printf("===== HEROES =====\n");
+    fprintf(stdout, "%d\n", optimize->opt_value);
+
     for (int i = 0; i < heroes->quantity; i++)
-    {
-        printf("HERO %d:\n", i + 1);
-        printf("    id: %d - group: %d\n", heroes->heroes[i].id, heroes->heroes[i].group);
-    }
+        if (optimize->opt_solution[i] == first_hero_group)
+            fprintf(stdout, "%d ", i + 1);
+    fprintf(stdout, "\n");
 
-    printf("\n===== CONFLICTS =====");
-    for (int i = 0; i < heroes->conflicts_qty; i++)
-    {
-        if (i % 10 == 0)
-            printf("\n");
-        printf("(%d, %d) ", heroes->conflicts[i].hero1, heroes->conflicts[i].hero2);
-    }
-    printf("\n\n");
-
-    printf("===== FRIENDSHIPS =====");
-    for (int i = 0; i < heroes->friendships_qty; i++)
-    {
-        if (i % 10 == 0)
-            printf("\n");
-        printf("(%d, %d) ", heroes->friendships[i].hero1, heroes->friendships[i].hero2);
-    }
-    printf("\n");
+    fprintf(stderr, "Tempo: %fs\n", optimize->time);
+    fprintf(stderr, "Nodos: %d\n", optimize->nodes);
 }

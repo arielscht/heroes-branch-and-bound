@@ -1,14 +1,23 @@
+#include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include "optimize.h"
 
 /* ============================== Auxiliary Functions ============================== */
 
+/*!
+    \brief Check the friendship between the next hero to the selected ones
+    \param heroes Pointer to the heroes structure
+    \param optimize Pointer to the optimize structure
+    \param cur_hero next hero to be selected
+    \return The group of the needed friendship or 2 if there is no friendship
+*/
 int check_friendships(heroes_t *heroes, optimize_state_t *optimize, int cur_hero)
 {
     int hero1, hero2;
+
     for (int i = 0; i < heroes->friendships_qty; i++)
     {
         hero1 = heroes->friendships[i].hero1;
@@ -22,6 +31,14 @@ int check_friendships(heroes_t *heroes, optimize_state_t *optimize, int cur_hero
     return 2;
 }
 
+/*!
+    \brief Check the conflicts between the next hero to the selected ones
+    \param heroes Pointer to the heroes structure
+    \param partial_solution partial computed solution
+    \param cur_hero next hero to be selected
+    \param cur_group selected group that the cur_hero will be allocated
+    \return The number of conflicts
+*/
 int check_conflicts(heroes_t *heroes, int *partial_solution, int cur_hero, int cur_group)
 {
     int hero1, hero2;
@@ -40,10 +57,17 @@ int check_conflicts(heroes_t *heroes, int *partial_solution, int cur_hero, int c
     return counter;
 }
 
+/*!
+    \brief Bound function given by the teacher
+    \param heroes Pointer to the heroes structure
+    \param depth The depth of the tree int the current iteration
+    \return The number of exclusive triangles
+*/
 int count_triangles(heroes_t *heroes, int depth)
 {
     int hero1, hero2, found, counter;
     counter = 0;
+
     memset(heroes->aux_matrix[0], 0, heroes->quantity * heroes->quantity * sizeof(short int));
     for (int i = 0; i < heroes->conflicts_qty; i++)
     {
@@ -82,6 +106,13 @@ int count_triangles(heroes_t *heroes, int depth)
 
 /* ============================== Internal Functions ============================== */
 
+/*!
+    \brief Calculate the actual profit of the solution
+    \param solution Actual solution found
+    \param heroes Pointer to the heroes structure
+    \param depth The depth of the tree int the current iteration
+    \return The value of the actual profif
+*/
 int profit(int *solution, heroes_t *heroes, int depth)
 {
     int profit = 0;
@@ -101,17 +132,41 @@ int profit(int *solution, heroes_t *heroes, int depth)
     return profit;
 }
 
+/*!
+    \brief Our custom bound function
+    \param heroes Pointer to the heroes structure
+    \param partial_solution partial solutioon found
+    \param depth The depth of the tree int the current iteration
+    \param cur_group selected group that the cur_hero will be allocated
+    \return the miminum conflicts quantity ahead the next selected hero
+*/
 int custom_bound(heroes_t *heroes, int *partial_solution, int depth, int cur_group)
 {
     return profit(partial_solution, heroes, depth) + count_triangles(heroes, depth) + check_conflicts(heroes, partial_solution, depth + 1, cur_group);
 }
 
+/*!
+    \brief Teacher bound function
+    \param heroes Pointer to the heroes structure
+    \param partial_solution partial solutioon found
+    \param depth The depth of the tree int the current iteration
+    \return the miminum conflicts quantity ahead the next selected hero
+*/
 int naive_bound(heroes_t *heroes, int *partial_solution, int depth)
 {
     return profit(partial_solution, heroes, depth) + count_triangles(heroes, depth);
 }
 
-int partial_bound(heroes_t *heroes, int *partial_solution, int depth, params_t *params, int cur_group)
+/*!
+    \brief Wrapper for the bound functions
+    \param heroes Pointer to the heroes structure
+    \param params Pointer to the params structure
+    \param partial_solution partial solutioon found
+    \param depth The depth of the tree int the current iteration
+    \param cur_group selected group that the cur_hero will be allocated
+    \return the miminum conflicts quantity ahead the next selected hero
+*/
+int partial_bound(heroes_t *heroes, params_t *params, int *partial_solution, int depth, int cur_group)
 {
     if (params->custom_bound)
         return custom_bound(heroes, partial_solution, depth, cur_group);
@@ -119,6 +174,14 @@ int partial_bound(heroes_t *heroes, int *partial_solution, int depth, params_t *
         return naive_bound(heroes, partial_solution, depth);
 }
 
+/*!
+    \brief Recursive function to calculate the profit
+    \param heroes Pointer to the heroes structure
+    \param params Pointer to the params structure
+    \param optimize Pointer to the optimize structure
+    \param depth The depth of the tree int the current iteration
+    \return return the solution
+*/
 void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_state_t *optimize, int depth)
 {
     int cur_opt, available_opt, partial_opt;
@@ -146,7 +209,7 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
         {
             partial_opt = INT_MIN;
             if (params->optimization)
-                partial_opt = partial_bound(heroes, optimize->cur_solution, depth, params, i);
+                partial_opt = partial_bound(heroes, params, optimize->cur_solution, depth, i);
 
             if (partial_opt < optimize->opt_value)
             {
@@ -160,30 +223,29 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
 
 /* ============================== Internal Functions ============================== */
 
-int optimize_heroes(heroes_t *heroes, params_t *params)
+void init_optimize_state(optimize_state_t *optimize, int quantity)
 {
-    optimize_state_t optimize;
+    optimize->cur_solution = alloc_array(quantity, sizeof(int));
+    optimize->opt_solution = alloc_array(quantity, sizeof(int));
+    optimize->opt_value = INT_MAX;
+    optimize->nodes = 0;
+}
+
+void destroy_optimize_state(optimize_state_t *optimize)
+{
+    free(optimize->cur_solution);
+    free(optimize->opt_solution);
+}
+
+int optimize_heroes(heroes_t *heroes, params_t *params, optimize_state_t *optimize)
+{
     struct timeval start, end;
 
-    optimize.cur_solution = alloc_array(heroes->quantity, sizeof(int));
-    optimize.opt_solution = alloc_array(heroes->quantity, sizeof(int));
-    optimize.opt_value = INT_MAX;
-    optimize.nodes = 0;
-
     gettimeofday(&start, NULL);
-    optimize_heroes_recursive(heroes, params, &optimize, 0);
+    optimize_heroes_recursive(heroes, params, optimize, 0);
     gettimeofday(&end, NULL);
 
-    optimize.time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
-
-    for (int i = 0; i < heroes->quantity; i++)
-    {
-        printf("%d ", optimize.opt_solution[i]);
-        heroes->heroes[i].group = optimize.opt_solution[i];
-    }
-    printf("\nNODES: %d", optimize.nodes);
-    printf("\nTIME: %f", optimize.time);
-    printf("\nCONFLICTS: %d\n\n", optimize.opt_value);
+    optimize->time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
 
     return 0;
 }

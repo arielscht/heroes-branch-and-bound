@@ -1,7 +1,10 @@
 #ifndef __INTERFACE__
 #define __INTERFACE__
 
+typedef struct params_t params_t;
+
 #include "heroes.h"
+#include "optimize.h"
 
 typedef struct params_t
 {
@@ -14,7 +17,7 @@ typedef struct params_t
     \param argv the array of arguments
     \param params Pointer to the params_t structure
 */
-void read_params(int argc, void *argv, params_t *params);
+void read_params(int argc, char **argv, params_t *params);
 
 /*!
     \brief Read the input file
@@ -24,14 +27,8 @@ void read_input(heroes_t *heroes);
 
 /*!
     \brief Print out the result
-    \param heroes Pointer to the heroes structure
+    \param optimize Pointer to the optimize_state_t structure
 */
-int show_results(heroes_t *heroes);
-
-/*!
-    \brief Debug print
-    \param heroes Pointer to the heroes structure
-*/
-void print_heroes(heroes_t *heroes);
+void show_results(heroes_t *heroes, optimize_state_t *optimize);
 
 #endif
