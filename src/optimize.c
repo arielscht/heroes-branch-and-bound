@@ -8,6 +8,25 @@
 /* ============================== Auxiliary Functions ============================== */
 
 /*!
+    \brief Check if the current aswner is correct
+    \param heroes Pointer to the heroes structure
+    \param optimize Pointer to the optimize structure
+    \return 1 if is correct, 0 otherwise
+*/
+int check_feasibility(heroes_t *heroes, optimize_state_t *optimize)
+{
+    int hero1, hero2;
+    for (int i = 0; i < heroes->friendships_qty; i++)
+    {
+        hero1 = heroes->friendships[i].hero1;
+        hero2 = heroes->friendships[i].hero2;
+        if (optimize->cur_solution[hero1 - 1] != optimize->cur_solution[hero2 - 1])
+            return 0;
+    }
+    return 1;
+}
+
+/*!
     \brief Check the friendship between the next hero to the selected ones
     \param heroes Pointer to the heroes structure
     \param optimize Pointer to the optimize structure
@@ -190,7 +209,7 @@ void optimize_heroes_recursive(heroes_t *heroes, params_t *params, optimize_stat
     if (depth == heroes->quantity)
     {
         cur_opt = profit(optimize->cur_solution, heroes, INT_MAX);
-        if (cur_opt < optimize->opt_value)
+        if (cur_opt < optimize->opt_value && (params->feasibility || check_feasibility(heroes, optimize)))
         {
             optimize->opt_value = cur_opt;
             memcpy(optimize->opt_solution, optimize->cur_solution, heroes->quantity * sizeof(int));
